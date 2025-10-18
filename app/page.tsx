@@ -63,13 +63,12 @@ export default function Home() {
             </p>
             <div className="flex gap-4 justify-center pt-4">
               <Link href="/signup">
-                <Button className="gap-2 px-6 py-3 text-lg">
+                <Button className="gap-2 px-6 py-3 text-lg bg-blue-600 text-white hover:bg-blue-700">
                   Get Started <ArrowRight className="w-4 h-4" />
                 </Button>
-
               </Link>
               <Link href="/about">
-                <Button size="lg" variant="outline">
+                <Button className="px-6 py-3 text-lg border bg-white border-gray-300 text-gray-700 hover:bg-gray-100 hover:bg-gray-200">
                   Learn More
                 </Button>
               </Link>
