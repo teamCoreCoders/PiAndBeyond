@@ -104,7 +104,8 @@ export default function Footer() {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
           <p>
-            &copy; {new Date().getFullYear()} Classroom. All rights reserved.
+            &copy; {new Date().getFullYear()} Pi and Beyond. All rights
+            reserved.
           </p>
         </div>
       </div>

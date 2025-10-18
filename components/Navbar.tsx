@@ -7,7 +7,7 @@ import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import Logo from "@/app/images/pi and beyond logo.jpg";
+import Logo from "@/app/images/pi and beyond logo.png";
 
 export default function Navbar() {
   const { user, userData } = useAuth();
@@ -44,7 +44,7 @@ export default function Navbar() {
                   : "/student/dashboard"
               }
             >
-              <Image src={Logo} alt="Logo" width={63} height={24} priority />
+              <Image src={Logo} alt="Logo" width={83} height={30} priority />
             </Link>
           </div>
 

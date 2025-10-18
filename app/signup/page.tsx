@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-
+import Logo from "@/app/images/pi and beyond logo.png";
 export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -55,6 +55,9 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+        <img src={Logo.src} alt="Watermark" className="w-[50%] opacity-20" />
+      </div> */}
       <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">

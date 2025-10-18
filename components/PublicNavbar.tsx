@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "./ui/button";
 import Image from "next/image";
-import Logo from "@/app/images/pi and beyond logo.jpg";
+import Logo from "@/app/images/pi and beyond logo.png";
 
 export default function PublicNavbar() {
   return (
@@ -9,7 +9,7 @@ export default function PublicNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/">
-            <Image src={Logo} alt="Logo" width={63} height={24} priority />
+            <Image src={Logo} alt="Logo" width={80} height={28} priority />
           </Link>
 
           <div className="hidden md:flex items-center gap-6">

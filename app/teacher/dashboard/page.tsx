@@ -30,7 +30,7 @@ import {
 import { PlusCircle, FolderTree, BookOpen, Users, Trash2 } from "lucide-react";
 import Footer from "@/components/Footer";
 import Link from "next/link";
-
+import Logo from "@/app/images/pi and beyond logo.png";
 export default function TeacherDashboard() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();
@@ -97,6 +97,9 @@ export default function TeacherDashboard() {
   return (
     <div className="min-h-[100svh] bg-gray-50 flex flex-col">
       <Navbar />
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+        <img src={Logo.src} alt="Watermark" className="w-[50%] opacity-20" />
+      </div>
 
       <div className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-[70vh] md:min-h-[80vh] lg:min-h-[85vh] pb-16">

@@ -1,20 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import PublicNavbar from '@/components/PublicNavbar';
-import Footer from '@/components/Footer';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { useState } from "react";
+import PublicNavbar from "@/components/PublicNavbar";
+import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Mail, Phone, MapPin, Send } from "lucide-react";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: '',
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
   });
   const [submitted, setSubmitted] = useState(false);
 
@@ -22,7 +28,7 @@ export default function ContactPage() {
     e.preventDefault();
     setSubmitted(true);
     setTimeout(() => {
-      setFormData({ name: '', email: '', subject: '', message: '' });
+      setFormData({ name: "", email: "", subject: "", message: "" });
       setSubmitted(false);
     }, 3000);
   };
@@ -52,8 +58,11 @@ export default function ContactPage() {
                 <CardDescription>Send us an email anytime</CardDescription>
               </CardHeader>
               <CardContent>
-                <a href="mailto:support@classroom.com" className="text-blue-600 hover:underline">
-                  support@classroom.com
+                <a
+                  href="mailto:anulilwani@gmail.com"
+                  className="text-blue-600 hover:underline"
+                >
+                  anulilwani@gmail.com
                 </a>
               </CardContent>
             </Card>
@@ -67,8 +76,11 @@ export default function ContactPage() {
                 <CardDescription>Mon-Fri from 8am to 5pm</CardDescription>
               </CardHeader>
               <CardContent>
-                <a href="tel:+15551234567" className="text-blue-600 hover:underline">
-                  +1 (555) 123-4567
+                <a
+                  href="tel:+15551234567"
+                  className="text-blue-600 hover:underline"
+                >
+                  +971 559255009
                 </a>
               </CardContent>
             </Card>
@@ -83,8 +95,9 @@ export default function ContactPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  123 Education St<br />
-                  Learning City, LC 12345
+                  Oud Medha,
+                  <br />
+                  Dubai, UAE
                 </p>
               </CardContent>
             </Card>
@@ -94,7 +107,9 @@ export default function ContactPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Send us a Message</CardTitle>
-                <CardDescription>Fill out the form below and we'll get back to you soon</CardDescription>
+                <CardDescription>
+                  Fill out the form below and we'll get back to you soon
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -108,7 +123,9 @@ export default function ContactPage() {
                         type="text"
                         placeholder="Your name"
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
                         required
                       />
                     </div>
@@ -122,7 +139,9 @@ export default function ContactPage() {
                         type="email"
                         placeholder="your@email.com"
                         value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, email: e.target.value })
+                        }
                         required
                       />
                     </div>
@@ -137,7 +156,9 @@ export default function ContactPage() {
                       type="text"
                       placeholder="What's this about?"
                       value={formData.subject}
-                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, subject: e.target.value })
+                      }
                       required
                     />
                   </div>
@@ -151,7 +172,9 @@ export default function ContactPage() {
                       placeholder="Tell us more..."
                       rows={6}
                       value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, message: e.target.value })
+                      }
                       required
                     />
                   </div>
@@ -162,9 +185,13 @@ export default function ContactPage() {
                     </div>
                   )}
 
-                  <Button type="submit" className="w-full gap-2" disabled={submitted}>
+                  <Button
+                    type="submit"
+                    className="w-full gap-2"
+                    disabled={submitted}
+                  >
                     <Send className="w-4 h-4" />
-                    {submitted ? 'Message Sent!' : 'Send Message'}
+                    {submitted ? "Message Sent!" : "Send Message"}
                   </Button>
                 </form>
               </CardContent>

@@ -16,7 +16,7 @@ import {
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect } from "react";
-
+import Logo from "@/app/images/pi and beyond logo.png";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -81,6 +81,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+        <img src={Logo.src} alt="Watermark" className="w-[50%] opacity-20" />
+      </div> */}
       <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
