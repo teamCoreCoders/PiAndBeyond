@@ -63,9 +63,10 @@ export default function Home() {
             </p>
             <div className="flex gap-4 justify-center pt-4">
               <Link href="/signup">
-                <Button size="lg" className="gap-2">
+                <Button className="gap-2 px-6 py-3 text-lg">
                   Get Started <ArrowRight className="w-4 h-4" />
                 </Button>
+
               </Link>
               <Link href="/about">
                 <Button size="lg" variant="outline">
