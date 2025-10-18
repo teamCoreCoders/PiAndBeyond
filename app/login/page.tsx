@@ -35,21 +35,72 @@ export default function LoginPage() {
     }
   }, [user, userData, router]);
 
+  // const handleLogin = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setLoading(true);
+  //   setError("");
+
+  //   try {
+  //     // If the provided credentials match the allowed teacher creds,
+  //     // route through the teacher override path instead of Firebase.
+  //     const allowedEmail = "anulilwani@gmail.com";
+  //     const allowedPassword = "Anupriya@2025";
+  //     if (email === allowedEmail && password === allowedPassword) {
+  //       await handleTeacherLogin();
+  //       return;
+  //     }
+
+  //     await signInWithEmailAndPassword(auth, email, password);
+  //   } catch (err: any) {
+  //     setError(err.message || "Failed to login");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // const handleTeacherLogin = async () => {
+  //   // Only allow this single teacher credential
+  //   const allowedEmail = "anulilwani@gmail.com";
+  //   const allowedPassword = "Anupriya@2025";
+
+  //   if (email !== allowedEmail || password !== allowedPassword) {
+  //     setError("Invalid teacher credentials");
+  //     return;
+
+  //     // Set override flag; do not call Firebase
+  //     try {
+  //       sessionStorage.setItem("teacherOverride", "true");
+  //       sessionStorage.setItem("teacherOverrideEmail", allowedEmail);
+  //       sessionStorage.setItem("teacherOverrideName", "Teacher");
+  //       router.push("/teacher/dashboard");
+  //     } catch (err: any) {
+  //       setError("Failed to set session override");
+  //     }
+  //   }
+  //   if (email === allowedEmail || password === allowedPassword) {
+  //     router.push("/teacher/dashboard");
+  //     return;
+  //   } else {
+  //     setError("Invalid teacher credentials");
+  //     return;
+  //   }
+  // };
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    try {
-      // If the provided credentials match the allowed teacher creds,
-      // route through the teacher override path instead of Firebase.
-      const allowedEmail = "anulilwani@gmail.com";
-      const allowedPassword = "Anupriya@2025";
-      if (email === allowedEmail && password === allowedPassword) {
-        await handleTeacherLogin();
-        return;
-      }
+    // const allowedEmail = "anulilwani@gmail.com";
+    // const allowedPassword = "Anupriya@2025";
 
+    try {
+      // Check if it's the teacher override account
+      // if (email === allowedEmail && password === allowedPassword) {
+      //   await handleTeacherLogin();
+      //   return;
+      // }
+
+      // Otherwise, normal Firebase login
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
       setError(err.message || "Failed to login");
@@ -58,26 +109,26 @@ export default function LoginPage() {
     }
   };
 
-  const handleTeacherLogin = async () => {
-    // Only allow this single teacher credential
-    const allowedEmail = "anulilwani@gmail.com";
-    const allowedPassword = "Anupriya@2025";
+  // const handleTeacherLogin = async () => {
+  //   const allowedEmail = "anulilwani@gmail.com";
+  //   const allowedPassword = "Anupriya@2025";
 
-    if (email !== allowedEmail || password !== allowedPassword) {
-      setError("Invalid teacher credentials");
-      return;
-    }
+  //   // Check both email and password together
+  //   if (email === allowedEmail && password === allowedPassword) {
+  //     try {
+  //       // Set session override to simulate teacher login
+  //       sessionStorage.setItem("teacherOverride", "true");
+  //       sessionStorage.setItem("teacherOverrideEmail", allowedEmail);
+  //       sessionStorage.setItem("teacherOverrideName", "Teacher");
 
-    // Set override flag; do not call Firebase
-    try {
-      sessionStorage.setItem("teacherOverride", "true");
-      sessionStorage.setItem("teacherOverrideEmail", allowedEmail);
-      sessionStorage.setItem("teacherOverrideName", "Teacher");
-      router.push("/teacher/dashboard");
-    } catch (err: any) {
-      setError("Failed to set session override");
-    }
-  };
+  //       router.push("/teacher/dashboard");
+  //     } catch (err: any) {
+  //       setError("Failed to set session override");
+  //     }
+  //   } else {
+  //     setError("Invalid teacher credentials");
+  //   }
+  // };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -134,14 +185,14 @@ export default function LoginPage() {
                 {loading ? "Signing in..." : "Sign In"}
               </Button>
 
-              <Button
+              {/* <Button
                 type="button"
                 variant="outline"
                 className="w-full"
                 onClick={handleTeacherLogin}
               >
                 Sign in as Teacher
-              </Button>
+              </Button> */}
 
               <div className="text-center text-sm">
                 Don't have an account?{" "}
