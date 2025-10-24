@@ -61,15 +61,15 @@ export default function Home() {
               solid foundation for tomorrow through individual focus and
               scientific understanding.
             </p>
-            <div className="flex gap-4 justify-center pt-4">
-              <Link href="/signup">
+            <div className="flex gap-4 justify-center pt-4 justify-self-center">
+              <Link href="/studentAuth">
                 <Button className="gap-2 px-6 py-3 text-lg bg-blue-600 text-white hover:bg-blue-700">
-                  Get Started <ArrowRight className="w-4 h-4" />
+                  Student Login <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
-              <Link href="/about">
+              <Link href="/teacherAuth">
                 <Button className="px-6 py-3 text-lg border bg-white border-gray-300 text-gray-700 hover:bg-gray-100 hover:bg-gray-200">
-                  Learn More
+                  Teacher Login
                 </Button>
               </Link>
             </div>

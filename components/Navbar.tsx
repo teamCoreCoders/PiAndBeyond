@@ -26,7 +26,7 @@ export default function Navbar() {
           sessionStorage.removeItem("teacherOverrideName");
         }
       } catch {}
-      router.push("/login");
+      router.push("/");
     }
   };
 
