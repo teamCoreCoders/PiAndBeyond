@@ -69,7 +69,7 @@ export default function SubjectDetailPage() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    dueDate: "",
+    // dueDate: "",
     file: null as File | null,
   });
 
@@ -146,12 +146,13 @@ export default function SubjectDetailPage() {
         teacherId: user.uid,
         title: formData.title,
         description: formData.description,
-        dueDate: new Date(formData.dueDate),
+        // dueDate: new Date(formData.dueDate),
+        dueDate: new Date(),
         fileURL,
       });
 
       setOpen(false);
-      setFormData({ title: "", description: "", dueDate: "", file: null });
+      setFormData({ title: "", description: "", file: null });
       loadAssignments();
     } catch (error) {
       console.error("Error creating assignment:", error);
@@ -371,7 +372,7 @@ export default function SubjectDetailPage() {
                         />
                       </div>
 
-                      <div className="space-y-2">
+                      {/* <div className="space-y-2">
                         <label className="text-sm font-medium">Due Date</label>
                         <Input
                           type="datetime-local"
@@ -384,7 +385,7 @@ export default function SubjectDetailPage() {
                           }
                           required
                         />
-                      </div>
+                      </div> */}
 
                       <div className="space-y-2">
                         <label className="text-sm font-medium">
@@ -421,9 +422,9 @@ export default function SubjectDetailPage() {
                     <Card key={assignment.id}>
                       <CardHeader>
                         <CardTitle>{assignment.title}</CardTitle>
-                        <CardDescription>
+                        {/* <CardDescription>
                           Due: {assignment.dueDate?.toDate().toLocaleString()}
-                        </CardDescription>
+                        </CardDescription> */}
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm text-gray-600">

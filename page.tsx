@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import PublicNavbar from "@/components/PublicNavbar";
+import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,15 +27,7 @@ export default function Home() {
   const router = useRouter();
   const { user, userData, loading } = useAuth();
 
-  useEffect(() => {
-    if (!loading && user && userData) {
-      if (userData.role === "teacher") {
-        router.push("/teacher/dashboard");
-      } else {
-        router.push("/student/dashboard");
-      }
-    }
-  }, [user, userData, loading, router]);
+  // Removed auto-redirect to allow logged-in users to view the homepage
 
   if (loading) {
     return (
@@ -47,7 +39,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <PublicNavbar />
+      {user && userData ? <Navbar /> : <PublicNavbar />}
       {/* HERO SECTION */}
       <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -62,16 +54,32 @@ export default function Home() {
               scientific understanding.
             </p>
             <div className="flex gap-4 justify-center pt-4">
-              <Link href="/studentAuth">
-                <Button className="gap-2 px-6 py-3 text-lg bg-blue-600 text-white hover:bg-blue-700">
-                  Student Login <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
-              <Link href="/teacherAuth">
-                <Button className="px-6 py-3 text-lg border bg-white border-gray-300 text-gray-700 hover:bg-gray-100 hover:bg-gray-200">
-                  Teacher Login
-                </Button>
-              </Link>
+              {user && userData ? (
+                <Link
+                  href={
+                    userData.role === "teacher"
+                      ? "/teacher/dashboard"
+                      : "/student/dashboard"
+                  }
+                >
+                  <Button className="gap-2 px-6 py-3 text-lg bg-blue-600 text-white hover:bg-blue-700">
+                    Go to Dashboard <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/studentAuth">
+                    <Button className="gap-2 px-6 py-3 text-lg bg-blue-600 text-white hover:bg-blue-700">
+                      Student Login <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <Link href="/teacherAuth">
+                    <Button className="px-6 py-3 text-lg border bg-white border-gray-300 text-gray-700 hover:bg-gray-100 hover:bg-gray-200">
+                      Teacher Login
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

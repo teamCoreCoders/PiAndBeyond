@@ -35,7 +35,7 @@ import {
   FileText,
   Upload,
   CheckCircle,
-  Clock,
+  // Clock,
   BookOpen,
   Download,
 } from "lucide-react";
@@ -193,13 +193,13 @@ export default function StudentClassPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <CardTitle>{assignment.title}</CardTitle>
-                          <CardDescription>
+                          {/* <CardDescription>
                             <div className="flex items-center gap-2 mt-1">
                               <Clock className="w-4 h-4" />
                               Due:{" "}
                               {assignment.dueDate?.toDate().toLocaleString()}
                             </div>
-                          </CardDescription>
+                          </CardDescription> */}
                         </div>
                         {getStatusBadge(assignment)}
                       </div>
