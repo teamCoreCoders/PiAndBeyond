@@ -5,6 +5,7 @@ import PublicNavbar from "@/components/PublicNavbar";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import Logo from "@/app/images/pi and beyond logo.png";
 import {
   Card,
   CardContent,
@@ -36,10 +37,16 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-[100svh] bg-gray-50 flex flex-col relative">
       {user && userData ? <Navbar /> : <PublicNavbar />}
+      <div
+        className="fixed inset-0 flex items-center justify-center pointer-events-none"
+        style={{ zIndex: 0 }}
+      >
+        <img src={Logo.src} alt="Watermark" className="w-[50%] opacity-100" />
+      </div>
       {/* HERO SECTION */}
-      <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-20">
+      <section className="bg-gradient-to-br from-blue-50/80 via-white/80 to-indigo-50/80 py-20 relative z-10 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-6">
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900">
@@ -83,7 +90,7 @@ export default function Home() {
         </div>
       </section>
       {/* FEATURES SECTION */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white/80 backdrop-blur-sm relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -232,7 +239,7 @@ export default function Home() {
         </div>
       </section> */}
       {/* ABOUT & WHY SECTION - Redesigned */}
-      <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
+      <section className="py-24 bg-gradient-to-b from-gray-50/80 to-white/80 backdrop-blur-sm relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Intro */}
           <div className="text-center mb-16">

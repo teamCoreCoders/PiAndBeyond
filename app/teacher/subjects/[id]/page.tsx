@@ -36,6 +36,7 @@ import {
   createStudyMaterial,
   getStudyMaterialsBySubject,
   deleteStudyMaterial,
+  deleteSubjectAssignment,
 } from "@/lib/firestore-helpers";
 import {
   PlusCircle,
@@ -224,6 +225,22 @@ export default function SubjectDetailPage() {
       loadStudyMaterials();
     } catch (error) {
       console.error("Error deleting study material:", error);
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this assignment? This will also delete all submissions."
+      )
+    )
+      return;
+
+    try {
+      await deleteSubjectAssignment(assignmentId);
+      loadAssignments();
+    } catch (error) {
+      console.error("Error deleting assignment:", error);
     }
   };
 
@@ -421,10 +438,23 @@ export default function SubjectDetailPage() {
                   {assignments.map((assignment) => (
                     <Card key={assignment.id}>
                       <CardHeader>
-                        <CardTitle>{assignment.title}</CardTitle>
-                        {/* <CardDescription>
-                          Due: {assignment.dueDate?.toDate().toLocaleString()}
-                        </CardDescription> */}
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle>{assignment.title}</CardTitle>
+                            {/* <CardDescription>
+                              Due: {assignment.dueDate?.toDate().toLocaleString()}
+                            </CardDescription> */}
+                          </div>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() =>
+                              handleDeleteAssignment(assignment.id)
+                            }
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm text-gray-600">

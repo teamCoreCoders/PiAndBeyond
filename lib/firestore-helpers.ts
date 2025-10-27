@@ -386,6 +386,16 @@ export async function getAssignmentsBySubject(subjectId: string) {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
+export async function deleteSubjectAssignment(assignmentId: string) {
+  // First delete all submissions for this assignment
+  const subsQ = query(collection(db, 'subjectSubmissions'), where('assignmentId', '==', assignmentId));
+  const subsSnap = await getDocs(subsQ);
+  await Promise.all(subsSnap.docs.map(s => deleteDoc(doc(db, 'subjectSubmissions', s.id))));
+  
+  // Then delete the assignment itself
+  await deleteDoc(doc(db, 'subjectAssignments', assignmentId));
+}
+
 export async function submitSubjectAssignment(data: {
   assignmentId: string;
   studentId: string;
