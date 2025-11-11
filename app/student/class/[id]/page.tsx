@@ -56,7 +56,7 @@ export default function StudentClassPage() {
 
   useEffect(() => {
     if (!loading && (!user || userData?.role !== "student")) {
-      router.push("/login");
+      router.push("/");
     }
   }, [user, userData, loading, router]);
 

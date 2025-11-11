@@ -82,7 +82,7 @@ export default function SubjectDetailPage() {
 
   useEffect(() => {
     if (!loading && userData?.role !== "teacher") {
-      router.push("/login");
+      router.push("/");
     }
   }, [userData, loading, router]);
 
