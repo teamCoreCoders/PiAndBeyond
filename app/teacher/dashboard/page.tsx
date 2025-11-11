@@ -45,7 +45,7 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     if (!loading && userData?.role !== "teacher") {
-      router.push("/login");
+      router.push("/");
     }
   }, [userData, loading, router]);
 

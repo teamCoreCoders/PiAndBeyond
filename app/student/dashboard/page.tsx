@@ -34,7 +34,7 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     if (!loading && (!user || userData?.role !== "student")) {
-      router.push("/login");
+      router.push("/");
     }
   }, [user, userData, loading, router]);
 
