@@ -37,6 +37,10 @@ import {
   getStudyMaterialsBySubject,
   deleteStudyMaterial,
   deleteSubjectAssignment,
+  createStudyMaterialFolder,
+  getStudyMaterialFoldersBySubject,
+  deleteStudyMaterialFolder,
+  getStudyMaterialsByFolder,
 } from "@/lib/firestore-helpers";
 import {
   PlusCircle,
@@ -47,6 +51,8 @@ import {
   ArrowLeft,
   BookOpen,
   Download,
+  Folder,
+  FolderPlus,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -61,10 +67,13 @@ export default function SubjectDetailPage() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [studyMaterials, setStudyMaterials] = useState<any[]>([]);
+  const [studyMaterialFolders, setStudyMaterialFolders] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [gradeDialogOpen, setGradeDialogOpen] = useState(false);
   const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
+  const [folderDialogOpen, setFolderDialogOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [marks, setMarks] = useState("");
 
   const [formData, setFormData] = useState({
@@ -77,7 +86,12 @@ export default function SubjectDetailPage() {
   const [materialFormData, setMaterialFormData] = useState({
     title: "",
     description: "",
-    file: null as File | null,
+    files: null as FileList | null,
+  });
+
+  const [folderFormData, setFolderFormData] = useState({
+    topicName: "",
+    description: "",
   });
 
   useEffect(() => {
@@ -92,6 +106,7 @@ export default function SubjectDetailPage() {
       loadStudents();
       loadAssignments();
       loadStudyMaterials();
+      loadStudyMaterialFolders();
     }
   }, [userData, subjectId]);
 
@@ -127,6 +142,11 @@ export default function SubjectDetailPage() {
   const loadStudyMaterials = async () => {
     const data = await getStudyMaterialsBySubject(subjectId);
     setStudyMaterials(data);
+  };
+
+  const loadStudyMaterialFolders = async () => {
+    const data = await getStudyMaterialFoldersBySubject(subjectId);
+    setStudyMaterialFolders(data);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -190,29 +210,67 @@ export default function SubjectDetailPage() {
 
   const handleMaterialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !materialFormData.file) return;
+    if (!user || !materialFormData.files || materialFormData.files.length === 0) return;
 
     try {
-      const fileURL = await uploadFile(
-        materialFormData.file,
-        `study-materials/${subjectId}/${Date.now()}_${
-          materialFormData.file.name
-        }`
-      );
+      const files = Array.from(materialFormData.files);
+      
+      // Upload all files
+      for (const file of files) {
+        const fileURL = await uploadFile(
+          file,
+          `study-materials/${subjectId}/${Date.now()}_${file.name}`
+        );
 
-      await createStudyMaterial({
-        subjectId,
-        title: materialFormData.title,
-        description: materialFormData.description,
-        fileURL,
-        uploadedBy: user.uid,
-      });
+        await createStudyMaterial({
+          subjectId,
+          title: file.name,
+          description: materialFormData.description || `Uploaded: ${file.name}`,
+          fileURL,
+          uploadedBy: user.uid,
+          folderId: selectedFolder || undefined,
+        });
+      }
 
       setMaterialDialogOpen(false);
-      setMaterialFormData({ title: "", description: "", file: null });
+      setMaterialFormData({ title: "", description: "", files: null });
+      setSelectedFolder(null);
       loadStudyMaterials();
     } catch (error) {
       console.error("Error uploading study material:", error);
+    }
+  };
+
+  const handleCreateFolder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    try {
+      await createStudyMaterialFolder({
+        subjectId,
+        topicName: folderFormData.topicName,
+        description: folderFormData.description,
+        createdBy: user.uid,
+      });
+
+      setFolderDialogOpen(false);
+      setFolderFormData({ topicName: "", description: "" });
+      loadStudyMaterialFolders();
+    } catch (error) {
+      console.error("Error creating folder:", error);
+    }
+  };
+
+  const handleDeleteFolder = async (folderId: string) => {
+    if (!confirm("Are you sure you want to delete this folder? All materials inside will also be deleted."))
+      return;
+
+    try {
+      await deleteStudyMaterialFolder(folderId);
+      loadStudyMaterialFolders();
+      loadStudyMaterials();
+    } catch (error) {
+      console.error("Error deleting folder:", error);
     }
   };
 
@@ -545,7 +603,63 @@ export default function SubjectDetailPage() {
             </TabsContent>
 
             <TabsContent value="materials">
-              <div className="flex justify-end mb-4">
+              <div className="flex justify-end gap-2 mb-4">
+                <Dialog
+                  open={folderDialogOpen}
+                  onOpenChange={setFolderDialogOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <FolderPlus className="w-4 h-4" />
+                      Create Folder
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Create Topic Folder</DialogTitle>
+                      <DialogDescription>
+                        Create a folder to organize study materials by topic
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateFolder} className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Topic Name</label>
+                        <Input
+                          placeholder="e.g., Chapter 1, Algebra, etc."
+                          value={folderFormData.topicName}
+                          onChange={(e) =>
+                            setFolderFormData({
+                              ...folderFormData,
+                              topicName: e.target.value,
+                            })
+                          }
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          Description (optional)
+                        </label>
+                        <Textarea
+                          placeholder="Brief description of the topic"
+                          value={folderFormData.description}
+                          onChange={(e) =>
+                            setFolderFormData({
+                              ...folderFormData,
+                              description: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+
+                      <Button type="submit" className="w-full">
+                        Create Folder
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+
                 <Dialog
                   open={materialDialogOpen}
                   onOpenChange={setMaterialDialogOpen}
@@ -560,31 +674,36 @@ export default function SubjectDetailPage() {
                     <DialogHeader>
                       <DialogTitle>Upload Study Material</DialogTitle>
                       <DialogDescription>
-                        Upload study materials for your students
+                        Upload one or multiple study materials for your students
                       </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleMaterialSubmit} className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Title</label>
-                        <Input
-                          placeholder="Material title"
-                          value={materialFormData.title}
+                        <label className="text-sm font-medium">
+                          Folder (optional)
+                        </label>
+                        <select
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          value={selectedFolder || ""}
                           onChange={(e) =>
-                            setMaterialFormData({
-                              ...materialFormData,
-                              title: e.target.value,
-                            })
+                            setSelectedFolder(e.target.value || null)
                           }
-                          required
-                        />
+                        >
+                          <option value="">No folder (Root)</option>
+                          {studyMaterialFolders.map((folder) => (
+                            <option key={folder.id} value={folder.id}>
+                              {folder.topicName}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="space-y-2">
                         <label className="text-sm font-medium">
-                          Description
+                          Description (optional)
                         </label>
                         <Textarea
-                          placeholder="Brief description of the material"
+                          placeholder="Brief description for all files"
                           value={materialFormData.description}
                           onChange={(e) =>
                             setMaterialFormData({
@@ -592,33 +711,36 @@ export default function SubjectDetailPage() {
                               description: e.target.value,
                             })
                           }
-                          required
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">File</label>
+                        <label className="text-sm font-medium">Files</label>
                         <Input
                           type="file"
+                          multiple
                           onChange={(e) =>
                             setMaterialFormData({
                               ...materialFormData,
-                              file: e.target.files?.[0] || null,
+                              files: e.target.files,
                             })
                           }
                           required
                         />
+                        <p className="text-xs text-gray-500">
+                          You can select multiple files at once
+                        </p>
                       </div>
 
                       <Button type="submit" className="w-full">
-                        Upload Material
+                        Upload Materials
                       </Button>
                     </form>
                   </DialogContent>
                 </Dialog>
               </div>
 
-              {studyMaterials.length === 0 ? (
+              {studyMaterialFolders.length === 0 && studyMaterials.filter(m => !m.folderId).length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <p className="text-gray-500">No study materials yet</p>
@@ -626,45 +748,147 @@ export default function SubjectDetailPage() {
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {studyMaterials.map((material) => (
-                    <Card key={material.id}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="flex items-center gap-2">
-                              <BookOpen className="w-5 h-5 text-blue-600" />
-                              {material.title}
-                            </CardTitle>
-                            <CardDescription className="mt-2">
-                              {material.description}
-                            </CardDescription>
-                            <div className="text-xs text-gray-400 mt-2">
-                              Uploaded:{" "}
-                              {material.createdAt?.toDate().toLocaleString()}
+                  {/* Show folders */}
+                  {studyMaterialFolders.map((folder) => {
+                    const folderMaterials = studyMaterials.filter(
+                      (m) => m.folderId === folder.id
+                    );
+                    return (
+                      <Card key={folder.id}>
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <CardTitle className="flex items-center gap-2">
+                                <Folder className="w-5 h-5 text-blue-600" />
+                                {folder.topicName}
+                              </CardTitle>
+                              {folder.description && (
+                                <CardDescription className="mt-2">
+                                  {folder.description}
+                                </CardDescription>
+                              )}
+                              <div className="text-xs text-gray-400 mt-2">
+                                {folderMaterials.length} file(s)
+                              </div>
                             </div>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteFolder(folder.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteMaterial(material.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        </CardHeader>
+                        <CardContent>
+                          {folderMaterials.length === 0 ? (
+                            <p className="text-sm text-gray-500 py-4">
+                              No materials in this folder yet
+                            </p>
+                          ) : (
+                            <div className="space-y-3">
+                              {folderMaterials.map((material) => (
+                                <div
+                                  key={material.id}
+                                  className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                                >
+                                  <div className="flex-1">
+                                    <div className="font-medium text-sm">
+                                      {material.title}
+                                    </div>
+                                    {material.description && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        {material.description}
+                                      </div>
+                                    )}
+                                    <div className="text-xs text-gray-400 mt-1">
+                                      Uploaded:{" "}
+                                      {material.createdAt?.toDate().toLocaleString()}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <a
+                                      href={material.fileURL}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                      Download
+                                    </a>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteMaterial(material.id)}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+
+                  {/* Show materials without folders */}
+                  {studyMaterials.filter((m) => !m.folderId).length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <BookOpen className="w-5 h-5 text-blue-600" />
+                          Other Materials
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <a
-                          href={material.fileURL}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-blue-600 hover:underline"
-                        >
-                          <Download className="w-4 h-4" />
-                          Download Material
-                        </a>
+                        <div className="space-y-3">
+                          {studyMaterials
+                            .filter((m) => !m.folderId)
+                            .map((material) => (
+                              <div
+                                key={material.id}
+                                className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                              >
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">
+                                    {material.title}
+                                  </div>
+                                  {material.description && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      {material.description}
+                                    </div>
+                                  )}
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    Uploaded:{" "}
+                                    {material.createdAt?.toDate().toLocaleString()}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <a
+                                    href={material.fileURL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                    Download
+                                  </a>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteMaterial(material.id)}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
                       </CardContent>
                     </Card>
-                  ))}
+                  )}
                 </div>
               )}
             </TabsContent>

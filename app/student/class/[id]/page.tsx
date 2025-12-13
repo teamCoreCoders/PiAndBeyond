@@ -28,8 +28,11 @@ import {
   getAssignmentsBySubject,
   submitSubjectAssignment,
   getSubjectSubmissionStatus,
+  getSubjectSubmissionsByStudent,
+  deleteSubjectSubmission,
   uploadFile,
   getStudyMaterialsBySubject,
+  getStudyMaterialFoldersBySubject,
 } from "@/lib/firestore-helpers";
 import {
   FileText,
@@ -38,6 +41,8 @@ import {
   // Clock,
   BookOpen,
   Download,
+  Folder,
+  Trash2,
 } from "lucide-react";
 
 export default function StudentClassPage() {
@@ -49,10 +54,13 @@ export default function StudentClassPage() {
   const [subjectData, setSubjectData] = useState<any>(null);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [studyMaterials, setStudyMaterials] = useState<any[]>([]);
+  const [studyMaterialFolders, setStudyMaterialFolders] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<FileList | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submissions, setSubmissions] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
     if (!loading && (!user || userData?.role !== "student")) {
@@ -65,6 +73,7 @@ export default function StudentClassPage() {
       loadSubjectData();
       loadAssignments();
       loadStudyMaterials();
+      loadStudyMaterialFolders();
     }
   }, [user, subjectId]);
 
@@ -82,13 +91,22 @@ export default function StudentClassPage() {
 
     const assignmentsWithStatus = await Promise.all(
       data.map(async (assignment) => {
-        const submission = await getSubjectSubmissionStatus(
+        const allSubmissions = await getSubjectSubmissionsByStudent(
           assignment.id,
           user.uid
         );
+        const latestSubmission = allSubmissions.length > 0 ? allSubmissions[0] : null;
+        
+        // Store all submissions for this assignment
+        setSubmissions(prev => ({
+          ...prev,
+          [assignment.id]: allSubmissions
+        }));
+        
         return {
           ...assignment,
-          submission,
+          submission: latestSubmission,
+          allSubmissions,
         };
       })
     );
@@ -101,34 +119,84 @@ export default function StudentClassPage() {
     setStudyMaterials(data);
   };
 
+  const loadStudyMaterialFolders = async () => {
+    const data = await getStudyMaterialFoldersBySubject(subjectId);
+    setStudyMaterialFolders(data);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !file || !selectedAssignment) return;
+    if (!user || !selectedAssignment) return;
+
+    // Check if this is the first submission
+    const existingSubmissions = submissions[selectedAssignment.id] || 
+                                selectedAssignment.allSubmissions || 
+                                [];
+    const isFirstSubmission = existingSubmissions.length === 0;
+
+    // For first submission, use files (multiple), otherwise use file (single)
+    if (isFirstSubmission) {
+      if (!files || files.length === 0) return;
+    } else {
+      if (!file) return;
+    }
 
     setSubmitting(true);
 
     try {
-      const fileURL = await uploadFile(
-        file,
-        `subject-submissions/${subjectId}/${selectedAssignment.id}/${
-          user.uid
-        }_${Date.now()}_${file.name}`
-      );
+      if (isFirstSubmission && files) {
+        // First submission: upload multiple files
+        const filesArray = Array.from(files);
+        for (const fileToUpload of filesArray) {
+          const fileURL = await uploadFile(
+            fileToUpload,
+            `subject-submissions/${subjectId}/${selectedAssignment.id}/${
+              user.uid
+            }_${Date.now()}_${fileToUpload.name}`
+          );
 
-      await submitSubjectAssignment({
-        assignmentId: selectedAssignment.id,
-        studentId: user.uid,
-        fileURL,
-      });
+          await submitSubjectAssignment({
+            assignmentId: selectedAssignment.id,
+            studentId: user.uid,
+            fileURL,
+          });
+        }
+      } else if (file) {
+        // Subsequent submissions: single file
+        const fileURL = await uploadFile(
+          file,
+          `subject-submissions/${subjectId}/${selectedAssignment.id}/${
+            user.uid
+          }_${Date.now()}_${file.name}`
+        );
+
+        await submitSubjectAssignment({
+          assignmentId: selectedAssignment.id,
+          studentId: user.uid,
+          fileURL,
+        });
+      }
 
       setOpen(false);
       setFile(null);
+      setFiles(null);
       setSelectedAssignment(null);
       loadAssignments();
     } catch (error) {
       console.error("Error submitting assignment:", error);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeleteSubmission = async (submissionId: string, assignmentId: string) => {
+    if (!confirm("Are you sure you want to delete this submission?")) return;
+
+    try {
+      await deleteSubjectSubmission(submissionId);
+      loadAssignments();
+    } catch (error) {
+      console.error("Error deleting submission:", error);
     }
   };
 
@@ -220,49 +288,71 @@ export default function StudentClassPage() {
                         </a>
                       )}
 
-                      {assignment.submission ? (
-                        <div className="pt-3 border-t">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-sm font-medium text-green-600 flex items-center gap-2">
-                                <CheckCircle className="w-4 h-4" />
-                                Submitted
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {assignment.submission.submittedAt
-                                  ?.toDate()
-                                  .toLocaleString()}
-                              </div>
+                      <div className="pt-3 border-t space-y-3">
+                        {((assignment.allSubmissions && assignment.allSubmissions.length > 0) || 
+                          (submissions[assignment.id] && submissions[assignment.id].length > 0)) ? (
+                          <>
+                            <div className="text-sm font-medium mb-2">
+                              Your Submissions ({(assignment.allSubmissions || submissions[assignment.id] || []).length})
                             </div>
-                            <a
-                              href={assignment.submission.fileURL}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 text-sm hover:underline"
-                            >
-                              View Submission
-                            </a>
-                          </div>
-                          {assignment.submission.graded && (
-                            <div className="mt-2 p-3 bg-green-50 rounded">
-                              <div className="text-sm font-medium">
-                                Grade: {assignment.submission.marks}
-                              </div>
+                            <div className="space-y-2">
+                              {(assignment.allSubmissions || submissions[assignment.id] || []).map((submission: any) => (
+                                <div
+                                  key={submission.id}
+                                  className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                                >
+                                  <div className="flex-1">
+                                    <div className="text-sm font-medium text-green-600 flex items-center gap-2">
+                                      <CheckCircle className="w-4 h-4" />
+                                      Submitted
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      {submission.submittedAt?.toDate().toLocaleString()}
+                                    </div>
+                                    {submission.graded && (
+                                      <div className="text-sm font-medium text-green-700 mt-1">
+                                        Grade: {submission.marks}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <a
+                                      href={submission.fileURL}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 text-sm hover:underline"
+                                    >
+                                      View
+                                    </a>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteSubmission(submission.id, assignment.id)}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          )}
-                        </div>
-                      ) : (
+                          </>
+                        ) : null}
                         <Button
-                          className="gap-2"
+                          className="gap-2 w-full"
                           onClick={() => {
                             setSelectedAssignment(assignment);
+                            setFile(null);
+                            setFiles(null);
                             setOpen(true);
                           }}
                         >
                           <Upload className="w-4 h-4" />
-                          Submit Assignment
+                          {((assignment.allSubmissions && assignment.allSubmissions.length > 0) || 
+                            (submissions[assignment.id] && submissions[assignment.id].length > 0))
+                            ? "Submit Again"
+                            : "Submit Assignment"}
                         </Button>
-                      )}
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -271,7 +361,7 @@ export default function StudentClassPage() {
           </TabsContent>
 
           <TabsContent value="materials">
-            {studyMaterials.length === 0 ? (
+            {studyMaterialFolders.length === 0 && studyMaterials.filter(m => !m.folderId).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
                   <p className="text-gray-500">
@@ -281,62 +371,192 @@ export default function StudentClassPage() {
               </Card>
             ) : (
               <div className="space-y-4">
-                {studyMaterials.map((material) => (
-                  <Card key={material.id}>
+                {/* Show folders */}
+                {studyMaterialFolders.map((folder) => {
+                  const folderMaterials = studyMaterials.filter(
+                    (m) => m.folderId === folder.id
+                  );
+                  return (
+                    <Card key={folder.id}>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Folder className="w-5 h-5 text-blue-600" />
+                          {folder.topicName}
+                        </CardTitle>
+                        {folder.description && (
+                          <CardDescription className="mt-2">
+                            {folder.description}
+                          </CardDescription>
+                        )}
+                        <div className="text-xs text-gray-400 mt-2">
+                          {folderMaterials.length} file(s)
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {folderMaterials.length === 0 ? (
+                          <p className="text-sm text-gray-500 py-4">
+                            No materials in this folder yet
+                          </p>
+                        ) : (
+                          <div className="space-y-3">
+                            {folderMaterials.map((material) => (
+                              <div
+                                key={material.id}
+                                className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                              >
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">
+                                    {material.title}
+                                  </div>
+                                  {material.description && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      {material.description}
+                                    </div>
+                                  )}
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    Uploaded:{" "}
+                                    {material.createdAt?.toDate().toLocaleString()}
+                                  </div>
+                                </div>
+                                <a
+                                  href={material.fileURL}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm"
+                                >
+                                  <Download className="w-4 h-4" />
+                                  Download
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+
+                {/* Show materials without folders */}
+                {studyMaterials.filter((m) => !m.folderId).length > 0 && (
+                  <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <BookOpen className="w-5 h-5 text-blue-600" />
-                        {material.title}
+                        Other Materials
                       </CardTitle>
-                      <CardDescription className="mt-2">
-                        {material.description}
-                      </CardDescription>
-                      <div className="text-xs text-gray-400 mt-2">
-                        Uploaded:{" "}
-                        {material.createdAt?.toDate().toLocaleString()}
-                      </div>
                     </CardHeader>
                     <CardContent>
-                      <a
-                        href={material.fileURL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-blue-600 hover:underline"
-                      >
-                        <Download className="w-4 h-4" />
-                        Download Material
-                      </a>
+                      <div className="space-y-3">
+                        {studyMaterials
+                          .filter((m) => !m.folderId)
+                          .map((material) => (
+                            <div
+                              key={material.id}
+                              className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                            >
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">
+                                  {material.title}
+                                </div>
+                                {material.description && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {material.description}
+                                  </div>
+                                )}
+                                <div className="text-xs text-gray-400 mt-1">
+                                  Uploaded:{" "}
+                                  {material.createdAt?.toDate().toLocaleString()}
+                                </div>
+                              </div>
+                              <a
+                                href={material.fileURL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm"
+                              >
+                                <Download className="w-4 h-4" />
+                                Download
+                              </a>
+                            </div>
+                          ))}
+                      </div>
                     </CardContent>
                   </Card>
-                ))}
+                )}
               </div>
             )}
           </TabsContent>
         </Tabs>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog 
+        open={open} 
+        onOpenChange={(open) => {
+          setOpen(open);
+          if (!open) {
+            setFile(null);
+            setFiles(null);
+            setSelectedAssignment(null);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Submit Assignment</DialogTitle>
             <DialogDescription>
-              Upload your completed assignment file
+              {selectedAssignment && 
+               ((submissions[selectedAssignment.id] || []).length === 0 || 
+                (selectedAssignment.allSubmissions && selectedAssignment.allSubmissions.length === 0))
+                ? "Upload your completed assignment files (you can select multiple files for your first submission)"
+                : "Upload your completed assignment file"}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Assignment File</label>
-              <Input
-                type="file"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                required
-              />
-            </div>
+            {selectedAssignment && 
+             ((submissions[selectedAssignment.id] || []).length === 0 || 
+              (selectedAssignment.allSubmissions && selectedAssignment.allSubmissions.length === 0)) ? (
+              // First submission: allow multiple files
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Assignment Files</label>
+                <Input
+                  type="file"
+                  multiple
+                  onChange={(e) => {
+                    setFiles(e.target.files);
+                    setFile(null);
+                  }}
+                  required
+                />
+                <p className="text-xs text-gray-500">
+                  You can select multiple files for your first submission
+                </p>
+              </div>
+            ) : (
+              // Subsequent submissions: single file only
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Assignment File</label>
+                <Input
+                  type="file"
+                  onChange={(e) => {
+                    setFile(e.target.files?.[0] || null);
+                    setFiles(null);
+                  }}
+                  required
+                />
+              </div>
+            )}
 
             <Button
               type="submit"
               className="w-full"
-              disabled={submitting || !file}
+              disabled={
+                submitting ||
+                (selectedAssignment && 
+                 ((submissions[selectedAssignment.id] || []).length === 0 || 
+                  (selectedAssignment.allSubmissions && selectedAssignment.allSubmissions.length === 0))
+                  ? !files || files.length === 0
+                  : !file)
+              }
             >
               {submitting ? "Submitting..." : "Submit Assignment"}
             </Button>

@@ -272,12 +272,41 @@ export async function deleteBranch(branchId: string) {
   await deleteDoc(doc(db, 'branches', branchId));
 }
 
+export async function createStudyMaterialFolder(data: {
+  subjectId: string;
+  topicName: string;
+  description?: string;
+  createdBy: string;
+}) {
+  return await addDoc(collection(db, 'studyMaterialFolders'), {
+    ...data,
+    createdAt: Timestamp.now(),
+  });
+}
+
+export async function getStudyMaterialFoldersBySubject(subjectId: string) {
+  const q = query(collection(db, 'studyMaterialFolders'), where('subjectId', '==', subjectId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export async function deleteStudyMaterialFolder(folderId: string) {
+  // Delete all materials in this folder first
+  const materialsQ = query(collection(db, 'studyMaterials'), where('folderId', '==', folderId));
+  const materialsSnap = await getDocs(materialsQ);
+  await Promise.all(materialsSnap.docs.map(d => deleteDoc(doc(db, 'studyMaterials', d.id))));
+  
+  // Then delete the folder
+  await deleteDoc(doc(db, 'studyMaterialFolders', folderId));
+}
+
 export async function createStudyMaterial(data: {
   subjectId: string;
   title: string;
   description: string;
   fileURL: string;
   uploadedBy: string;
+  folderId?: string;
 }) {
   return await addDoc(collection(db, 'studyMaterials'), {
     ...data,
@@ -287,6 +316,12 @@ export async function createStudyMaterial(data: {
 
 export async function getStudyMaterialsBySubject(subjectId: string) {
   const q = query(collection(db, 'studyMaterials'), where('subjectId', '==', subjectId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export async function getStudyMaterialsByFolder(folderId: string) {
+  const q = query(collection(db, 'studyMaterials'), where('folderId', '==', folderId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
@@ -443,4 +478,22 @@ export async function getSubjectSubmissionStatus(assignmentId: string, studentId
   );
   const snapshot = await getDocs(q);
   return snapshot.empty ? null : { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+}
+
+export async function getSubjectSubmissionsByStudent(assignmentId: string, studentId: string) {
+  const q = query(
+    collection(db, 'subjectSubmissions'),
+    where('assignmentId', '==', assignmentId),
+    where('studentId', '==', studentId)
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => {
+    const aTime = a.submittedAt?.toMillis() || 0;
+    const bTime = b.submittedAt?.toMillis() || 0;
+    return bTime - aTime; // Most recent first
+  });
+}
+
+export async function deleteSubjectSubmission(submissionId: string) {
+  await deleteDoc(doc(db, 'subjectSubmissions', submissionId));
 }
