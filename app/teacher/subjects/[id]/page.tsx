@@ -80,7 +80,7 @@ export default function SubjectDetailPage() {
     title: "",
     description: "",
     // dueDate: "",
-    file: null as File | null,
+    files: null as FileList | null,
   });
 
   const [materialFormData, setMaterialFormData] = useState({
@@ -155,11 +155,18 @@ export default function SubjectDetailPage() {
 
     try {
       let fileURL = "";
-      if (formData.file) {
-        fileURL = await uploadFile(
-          formData.file,
-          `subject-assignments/${subjectId}/${Date.now()}_${formData.file.name}`
-        );
+      let fileURLs: string[] = [];
+      
+      if (formData.files && formData.files.length > 0) {
+        const filesArray = Array.from(formData.files);
+        for (const file of filesArray) {
+          const url = await uploadFile(
+            file,
+            `subject-assignments/${subjectId}/${Date.now()}_${file.name}`
+          );
+          fileURLs.push(url);
+        }
+        fileURL = fileURLs[0]; // Keep first file as primary for backward compatibility
       }
 
       await createSubjectAssignment({
@@ -170,10 +177,11 @@ export default function SubjectDetailPage() {
         // dueDate: new Date(formData.dueDate),
         dueDate: new Date(),
         fileURL,
+        fileURLs,
       });
 
       setOpen(false);
-      setFormData({ title: "", description: "", file: null });
+      setFormData({ title: "", description: "", files: null });
       loadAssignments();
     } catch (error) {
       console.error("Error creating assignment:", error);
@@ -464,17 +472,21 @@ export default function SubjectDetailPage() {
 
                       <div className="space-y-2">
                         <label className="text-sm font-medium">
-                          Attachment (optional)
+                          Attachments (optional)
                         </label>
                         <Input
                           type="file"
+                          multiple
                           onChange={(e) =>
                             setFormData({
                               ...formData,
-                              file: e.target.files?.[0] || null,
+                              files: e.target.files,
                             })
                           }
                         />
+                        <p className="text-xs text-gray-500">
+                          You can select multiple files
+                        </p>
                       </div>
 
                       <Button type="submit" className="w-full">
@@ -518,7 +530,22 @@ export default function SubjectDetailPage() {
                         <p className="text-sm text-gray-600">
                           {assignment.description}
                         </p>
-                        {assignment.fileURL && (
+                        {assignment.fileURLs && assignment.fileURLs.length > 0 ? (
+                          <div className="mt-2 space-y-1">
+                            <span className="text-xs text-gray-500">Attachments:</span>
+                            {assignment.fileURLs.map((url: string, index: number) => (
+                              <a
+                                key={index}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 text-sm hover:underline block"
+                              >
+                                Attachment {index + 1}
+                              </a>
+                            ))}
+                          </div>
+                        ) : assignment.fileURL && (
                           <a
                             href={assignment.fileURL}
                             target="_blank"

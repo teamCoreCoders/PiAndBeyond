@@ -57,7 +57,6 @@ export default function StudentClassPage() {
   const [studyMaterialFolders, setStudyMaterialFolders] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
-  const [file, setFile] = useState<File | null>(null);
   const [files, setFiles] = useState<FileList | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submissions, setSubmissions] = useState<Record<string, any[]>>({});
@@ -126,48 +125,17 @@ export default function StudentClassPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !selectedAssignment) return;
-
-    // Check if this is the first submission
-    const existingSubmissions = submissions[selectedAssignment.id] || 
-                                selectedAssignment.allSubmissions || 
-                                [];
-    const isFirstSubmission = existingSubmissions.length === 0;
-
-    // For first submission, use files (multiple), otherwise use file (single)
-    if (isFirstSubmission) {
-      if (!files || files.length === 0) return;
-    } else {
-      if (!file) return;
-    }
+    if (!user || !selectedAssignment || !files || files.length === 0) return;
 
     setSubmitting(true);
 
     try {
-      if (isFirstSubmission && files) {
-        // First submission: upload multiple files
-        const filesArray = Array.from(files);
-        for (const fileToUpload of filesArray) {
-          const fileURL = await uploadFile(
-            fileToUpload,
-            `subject-submissions/${subjectId}/${selectedAssignment.id}/${
-              user.uid
-            }_${Date.now()}_${fileToUpload.name}`
-          );
-
-          await submitSubjectAssignment({
-            assignmentId: selectedAssignment.id,
-            studentId: user.uid,
-            fileURL,
-          });
-        }
-      } else if (file) {
-        // Subsequent submissions: single file
+      // Upload all selected files as separate submissions
+      const filesArray = Array.from(files);
+      for (const fileToUpload of filesArray) {
         const fileURL = await uploadFile(
-          file,
-          `subject-submissions/${subjectId}/${selectedAssignment.id}/${
-            user.uid
-          }_${Date.now()}_${file.name}`
+          fileToUpload,
+          `subject-submissions/${subjectId}/${selectedAssignment.id}/${user.uid}_${Date.now()}_${fileToUpload.name}`
         );
 
         await submitSubjectAssignment({
@@ -178,7 +146,6 @@ export default function StudentClassPage() {
       }
 
       setOpen(false);
-      setFile(null);
       setFiles(null);
       setSelectedAssignment(null);
       loadAssignments();
@@ -277,7 +244,22 @@ export default function StudentClassPage() {
                         {assignment.description}
                       </p>
 
-                      {assignment.fileURL && (
+                      {assignment.fileURLs && assignment.fileURLs.length > 0 ? (
+                        <div className="mt-2 space-y-1">
+                          <span className="text-xs text-gray-500">Assignment Files:</span>
+                          {assignment.fileURLs.map((url: string, index: number) => (
+                            <a
+                              key={index}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 text-sm hover:underline block"
+                            >
+                              File {index + 1}
+                            </a>
+                          ))}
+                        </div>
+                      ) : assignment.fileURL && (
                         <a
                           href={assignment.fileURL}
                           target="_blank"
@@ -341,7 +323,6 @@ export default function StudentClassPage() {
                           className="gap-2 w-full"
                           onClick={() => {
                             setSelectedAssignment(assignment);
-                            setFile(null);
                             setFiles(null);
                             setOpen(true);
                           }}
@@ -494,7 +475,6 @@ export default function StudentClassPage() {
         onOpenChange={(open) => {
           setOpen(open);
           if (!open) {
-            setFile(null);
             setFiles(null);
             setSelectedAssignment(null);
           }
@@ -504,59 +484,30 @@ export default function StudentClassPage() {
           <DialogHeader>
             <DialogTitle>Submit Assignment</DialogTitle>
             <DialogDescription>
-              {selectedAssignment && 
-               ((submissions[selectedAssignment.id] || []).length === 0 || 
-                (selectedAssignment.allSubmissions && selectedAssignment.allSubmissions.length === 0))
-                ? "Upload your completed assignment files (you can select multiple files for your first submission)"
-                : "Upload your completed assignment file"}
+              Upload your completed assignment files (you can select multiple files)
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {selectedAssignment && 
-             ((submissions[selectedAssignment.id] || []).length === 0 || 
-              (selectedAssignment.allSubmissions && selectedAssignment.allSubmissions.length === 0)) ? (
-              // First submission: allow multiple files
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Assignment Files</label>
-                <Input
-                  type="file"
-                  multiple
-                  onChange={(e) => {
-                    setFiles(e.target.files);
-                    setFile(null);
-                  }}
-                  required
-                />
-                <p className="text-xs text-gray-500">
-                  You can select multiple files for your first submission
-                </p>
-              </div>
-            ) : (
-              // Subsequent submissions: single file only
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Assignment File</label>
-                <Input
-                  type="file"
-                  onChange={(e) => {
-                    setFile(e.target.files?.[0] || null);
-                    setFiles(null);
-                  }}
-                  required
-                />
-              </div>
-            )}
+            {/* Always allow multiple files for all submissions */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Assignment Files</label>
+              <Input
+                type="file"
+                multiple
+                onChange={(e) => {
+                  setFiles(e.target.files);
+                }}
+                required
+              />
+              <p className="text-xs text-gray-500">
+                You can select multiple files for your submission
+              </p>
+            </div>
 
             <Button
               type="submit"
               className="w-full"
-              disabled={
-                submitting ||
-                (selectedAssignment && 
-                 ((submissions[selectedAssignment.id] || []).length === 0 || 
-                  (selectedAssignment.allSubmissions && selectedAssignment.allSubmissions.length === 0))
-                  ? !files || files.length === 0
-                  : !file)
-              }
+              disabled={submitting || !files || files.length === 0}
             >
               {submitting ? "Submitting..." : "Submit Assignment"}
             </Button>

@@ -407,6 +407,7 @@ export async function createSubjectAssignment(data: {
   description: string;
   dueDate: Date;
   fileURL?: string;
+  fileURLs?: string[];
 }) {
   return await addDoc(collection(db, 'subjectAssignments'), {
     ...data,
@@ -487,9 +488,12 @@ export async function getSubjectSubmissionsByStudent(assignmentId: string, stude
     where('studentId', '==', studentId)
   );
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => {
-    const aTime = a.submittedAt?.toMillis() || 0;
-    const bTime = b.submittedAt?.toMillis() || 0;
+  return snapshot.docs.map(doc => {
+    const data = doc.data();
+    return { id: doc.id, ...data, submittedAt: data.submittedAt };
+  }).sort((a, b) => {
+    const aTime = a.submittedAt?.toMillis?.() || 0;
+    const bTime = b.submittedAt?.toMillis?.() || 0;
     return bTime - aTime; // Most recent first
   });
 }
