@@ -76,6 +76,11 @@ export default function SubjectDetailPage() {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [marks, setMarks] = useState("");
 
+  // Loading states
+  const [uploadingMaterial, setUploadingMaterial] = useState(false);
+  const [creatingAssignment, setCreatingAssignment] = useState(false);
+  const [creatingFolder, setCreatingFolder] = useState(false);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -151,7 +156,9 @@ export default function SubjectDetailPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || creatingAssignment) return;
+
+    setCreatingAssignment(true);
 
     try {
       let fileURL = "";
@@ -185,6 +192,8 @@ export default function SubjectDetailPage() {
       loadAssignments();
     } catch (error) {
       console.error("Error creating assignment:", error);
+    } finally {
+      setCreatingAssignment(false);
     }
   };
 
@@ -218,7 +227,9 @@ export default function SubjectDetailPage() {
 
   const handleMaterialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !materialFormData.files || materialFormData.files.length === 0) return;
+    if (!user || !materialFormData.files || materialFormData.files.length === 0 || uploadingMaterial) return;
+
+    setUploadingMaterial(true);
 
     try {
       const files = Array.from(materialFormData.files);
@@ -246,12 +257,16 @@ export default function SubjectDetailPage() {
       loadStudyMaterials();
     } catch (error) {
       console.error("Error uploading study material:", error);
+    } finally {
+      setUploadingMaterial(false);
     }
   };
 
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || creatingFolder) return;
+
+    setCreatingFolder(true);
 
     try {
       await createStudyMaterialFolder({
@@ -266,6 +281,8 @@ export default function SubjectDetailPage() {
       loadStudyMaterialFolders();
     } catch (error) {
       console.error("Error creating folder:", error);
+    } finally {
+      setCreatingFolder(false);
     }
   };
 
@@ -489,8 +506,8 @@ export default function SubjectDetailPage() {
                         </p>
                       </div>
 
-                      <Button type="submit" className="w-full">
-                        Create Assignment
+                      <Button type="submit" className="w-full" disabled={creatingAssignment}>
+                        {creatingAssignment ? "Creating..." : "Create Assignment"}
                       </Button>
                     </form>
                   </DialogContent>
@@ -680,8 +697,8 @@ export default function SubjectDetailPage() {
                         />
                       </div>
 
-                      <Button type="submit" className="w-full">
-                        Create Folder
+                      <Button type="submit" className="w-full" disabled={creatingFolder}>
+                        {creatingFolder ? "Creating..." : "Create Folder"}
                       </Button>
                     </form>
                   </DialogContent>
@@ -759,8 +776,8 @@ export default function SubjectDetailPage() {
                         </p>
                       </div>
 
-                      <Button type="submit" className="w-full">
-                        Upload Materials
+                      <Button type="submit" className="w-full" disabled={uploadingMaterial}>
+                        {uploadingMaterial ? "Uploading..." : "Upload Materials"}
                       </Button>
                     </form>
                   </DialogContent>

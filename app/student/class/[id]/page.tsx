@@ -125,7 +125,7 @@ export default function StudentClassPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !selectedAssignment || !files || files.length === 0) return;
+    if (!user || !selectedAssignment || !files || files.length === 0 || submitting) return;
 
     setSubmitting(true);
 
